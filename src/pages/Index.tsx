@@ -257,12 +257,11 @@ const Index = () => {
             todaysEntries={todaysEntries}
             profile={profile}
             profileWeight={profileForm.weight}
-            onUpdateWeight={() => setShowWeightModal(true)}
             onGoToNutraIA={() => setActiveTab("nutra_ia")}
           />
         )}
         {activeTab === "scanner" && <ScannerTab onSaveToDiary={addToDiary} />}
-        {activeTab === "nutra_ia" && <NutraIATab />}
+        {activeTab === "nutra_ia" && <NutraIATab diaryEntries={diaryEntries} />}
         {activeTab === "diary" && (
           <DiaryTab
             entries={diaryEntries}
@@ -279,6 +278,12 @@ const Index = () => {
             onAvatarChange={handleAvatarChange}
             onRedoAssessment={() => setShowOnboarding(true)}
             onLogout={handleLogout}
+            onUpdateTargets={(newTargets) => {
+              if (!user || !profile) return;
+              const updated = { ...profile, targets: newTargets };
+              setProfile(updated);
+              localStorage.setItem(`profile_v20_${user.id}`, JSON.stringify(updated));
+            }}
           />
         )}
       </main>
