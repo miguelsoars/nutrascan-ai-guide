@@ -1,5 +1,4 @@
-import { TrendingUp, Sparkles, Heart } from "lucide-react";
-import WeightChart from "@/components/WeightChart";
+import { Sparkles, Heart, Utensils, Leaf, Droplets } from "lucide-react";
 import type { MealTotals, Targets, ProfileData, DiaryEntry } from "@/types/nutrascan";
 
 interface HomeTabProps {
@@ -9,9 +8,55 @@ interface HomeTabProps {
   todaysEntries: DiaryEntry[];
   profile: ProfileData | null;
   profileWeight: string;
-  onUpdateWeight: () => void;
   onGoToNutraIA: () => void;
 }
+
+const getRecommendations = (dailyTotals: MealTotals, targets: Targets, goal: string) => {
+  const remaining = {
+    calories: Math.max(0, targets.calories - dailyTotals.calories),
+    protein: Math.max(0, targets.protein - dailyTotals.protein),
+    carbs: Math.max(0, targets.carbs - dailyTotals.carbs),
+    fat: Math.max(0, targets.fat - dailyTotals.fat),
+  };
+
+  const recs: { icon: React.ReactNode; title: string; description: string }[] = [];
+
+  if (remaining.protein > 30) {
+    recs.push({
+      icon: <Utensils size={16} className="text-[hsl(var(--macro-protein))]" />,
+      title: "Aumente a proteína",
+      description: `Faltam ${Math.round(remaining.protein)}g. Inclua frango grelhado, ovos ou whey protein.`,
+    });
+  }
+
+  if (remaining.calories > 400 && remaining.carbs > 40) {
+    recs.push({
+      icon: <Leaf size={16} className="text-success" />,
+      title: "Refeição equilibrada",
+      description: goal.toLowerCase().includes("emagrecer")
+        ? "Opte por salada com proteína magra e legumes para completar o dia."
+        : "Arroz integral, batata-doce ou aveia são boas fontes de energia.",
+    });
+  }
+
+  if (remaining.fat > 15) {
+    recs.push({
+      icon: <Droplets size={16} className="text-[hsl(var(--macro-fat))]" />,
+      title: "Gorduras saudáveis",
+      description: `Faltam ${Math.round(remaining.fat)}g. Abacate, castanhas ou azeite complementam bem.`,
+    });
+  }
+
+  if (recs.length === 0) {
+    recs.push({
+      icon: <Sparkles size={16} className="text-primary" />,
+      title: "Meta quase atingida!",
+      description: "Você está no caminho certo. Continue mantendo o equilíbrio nas refeições.",
+    });
+  }
+
+  return recs.slice(0, 3);
+};
 
 const HomeTab = ({
   name,
@@ -19,14 +64,14 @@ const HomeTab = ({
   targets,
   todaysEntries,
   profile,
-  profileWeight,
-  onUpdateWeight,
   onGoToNutraIA,
 }: HomeTabProps) => {
   const getProgress = (curr: number, max: number) => Math.min((curr / (max || 1)) * 100, 100);
+  const goal = profile?.inputs?.goal || "";
+  const recommendations = getRecommendations(dailyTotals, targets, goal);
 
   return (
-    <div className="fade-in space-y-6 text-left">
+    <div className="fade-in space-y-5 text-left">
       <h1 className="text-[28px] font-bold tracking-tight text-foreground">
         Olá, <span className="text-primary">{name?.split(" ")[0] || "Bem-vindo"}</span>!
       </h1>
@@ -55,46 +100,41 @@ const HomeTab = ({
         </div>
         <div className="grid grid-cols-3 gap-2 divide-x divide-border text-center">
           <div>
-            <span className="block text-[12px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">
-              Prot
-            </span>
+            <span className="block text-[11px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">Prot</span>
             <span className="text-[17px] font-bold">{Math.round(dailyTotals.protein)}g</span>
           </div>
           <div>
-            <span className="block text-[12px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">
-              Carb
-            </span>
+            <span className="block text-[11px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">Carb</span>
             <span className="text-[17px] font-bold">{Math.round(dailyTotals.carbs)}g</span>
           </div>
           <div>
-            <span className="block text-[12px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">
-              Gord
-            </span>
+            <span className="block text-[11px] text-muted-foreground mb-1 font-bold uppercase tracking-wider">Gord</span>
             <span className="text-[17px] font-bold">{Math.round(dailyTotals.fat)}g</span>
           </div>
         </div>
       </div>
 
-      {/* Weight Card */}
+      {/* NutraIA Recommendations */}
       <div className="bg-card rounded-3xl shadow-sm border border-border p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[17px] font-bold flex items-center gap-2 leading-tight">
-            <TrendingUp className="text-primary" size={20} /> Peso atual
-          </h2>
-          <button
-            onClick={onUpdateWeight}
-            className="bg-accent text-primary text-[13px] font-bold px-4 py-2 rounded-full active:scale-95 transition-all"
-          >
-            Atualizar
-          </button>
+        <h2 className="text-[17px] font-bold flex items-center gap-2 leading-tight mb-4">
+          <Sparkles className="text-primary" size={20} /> Recomendação NutraIA
+        </h2>
+        <div className="space-y-3">
+          {recommendations.map((rec, i) => (
+            <div
+              key={i}
+              className="flex gap-3 items-start bg-secondary/60 rounded-2xl p-4 border border-border/50"
+            >
+              <div className="w-8 h-8 rounded-xl bg-card flex items-center justify-center shrink-0 border border-border shadow-sm mt-0.5">
+                {rec.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-[15px] font-bold text-foreground leading-tight">{rec.title}</h4>
+                <p className="text-[13px] text-muted-foreground mt-1 leading-relaxed">{rec.description}</p>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-[32px] font-bold tracking-tighter">
-            {profile?.weightHistory?.slice(-1)[0]?.weight || profileWeight || 0}
-          </span>
-          <span className="text-[15px] font-bold text-muted-foreground">kg</span>
-        </div>
-        <WeightChart history={profile?.weightHistory || []} />
       </div>
 
       {/* NutraIA CTA */}

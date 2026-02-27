@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Heart, Loader2, ShieldCheck, Target } from "lucide-react";
+import { Heart, Loader2, ShieldCheck, Target, Lock, CalendarDays } from "lucide-react";
+import type { DiaryEntry } from "@/types/nutrascan";
 
 interface NutraInsight {
   title: string;
@@ -7,9 +8,19 @@ interface NutraInsight {
   type: "success" | "warning";
 }
 
-const NutraIATab = () => {
+interface NutraIATabProps {
+  diaryEntries: DiaryEntry[];
+}
+
+const NutraIATab = ({ diaryEntries }: NutraIATabProps) => {
   const [insights, setInsights] = useState<NutraInsight[] | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Count unique days with meals
+  const uniqueDays = new Set(diaryEntries.map((e) => e.date));
+  const daysWithMeals = uniqueDays.size;
+  const daysRemaining = Math.max(0, 7 - daysWithMeals);
+  const isLocked = daysRemaining > 0;
 
   const generateInsights = () => {
     setIsGenerating(true);
@@ -43,22 +54,54 @@ const NutraIATab = () => {
         <p className="text-muted-foreground text-[16px] mb-8 leading-relaxed">
           Nossa Inteligência Artificial busca padrões em suas refeições para otimizar seus resultados.
         </p>
-        {!insights && !isGenerating && (
-          <button
-            onClick={generateInsights}
-            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all text-[15px]"
-          >
-            Gerar relatório
-          </button>
-        )}
-        {isGenerating && (
-          <div className="py-4 text-primary">
-            <Loader2 className="animate-spin mx-auto" size={32} />
+
+        {isLocked ? (
+          <div className="w-full space-y-4">
+            <div className="bg-secondary rounded-2xl p-6 border border-border flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Lock size={24} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-[17px] font-bold text-foreground mb-1">Relatório bloqueado</h3>
+              <p className="text-muted-foreground text-[14px] leading-relaxed mb-4">
+                A NutraIA precisa de pelo menos <span className="font-bold text-foreground">7 dias</span> de refeições registradas para entender seu comportamento alimentar.
+              </p>
+              <div className="flex items-center gap-2 bg-accent text-primary px-4 py-2.5 rounded-xl font-bold text-[14px]">
+                <CalendarDays size={18} />
+                {daysRemaining === 1
+                  ? "Falta 1 dia para liberar"
+                  : `Faltam ${daysRemaining} dias para liberar`}
+              </div>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-700 rounded-full"
+                style={{ width: `${(daysWithMeals / 7) * 100}%` }}
+              />
+            </div>
+            <p className="text-muted-foreground text-[12px] font-semibold">
+              {daysWithMeals}/7 dias registrados
+            </p>
           </div>
+        ) : (
+          <>
+            {!insights && !isGenerating && (
+              <button
+                onClick={generateInsights}
+                className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all text-[15px]"
+              >
+                Gerar relatório
+              </button>
+            )}
+            {isGenerating && (
+              <div className="py-4 text-primary">
+                <Loader2 className="animate-spin mx-auto" size={32} />
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {insights && (
+      {insights && !isLocked && (
         <div className="space-y-4 text-left">
           <h3 className="font-bold text-muted-foreground text-[12px] uppercase tracking-widest px-2">
             Relatório gerado
