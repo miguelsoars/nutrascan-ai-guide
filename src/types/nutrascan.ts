@@ -29,6 +29,7 @@ export interface ProfileData {
   inputs: ProfileForm & { estimatedBF?: number; tdee?: number };
   targets: Targets;
   weightHistory: WeightEntry[];
+  strategyRedoDate?: number;
 }
 
 export interface Targets {
@@ -57,7 +58,24 @@ export interface MealTotals {
 export interface AnalysisResult {
   items: FoodItem[];
   totals: MealTotals;
+  mealType?: MealType;
 }
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export const mealTypeLabels: Record<MealType, string> = {
+  breakfast: "Café da manhã",
+  lunch: "Almoço",
+  dinner: "Janta",
+  snack: "Lanche",
+};
+
+export const mealTypeEmojis: Record<MealType, string> = {
+  breakfast: "☕",
+  lunch: "🍽️",
+  dinner: "🌙",
+  snack: "🍎",
+};
 
 export interface DiaryEntry {
   id: number;
@@ -66,6 +84,7 @@ export interface DiaryEntry {
   totals: MealTotals;
   items: FoodItem[];
   timestamp: number;
+  mealType?: MealType;
 }
 
 export type TabId = "home" | "scanner" | "nutra_ia" | "diary" | "profile";
